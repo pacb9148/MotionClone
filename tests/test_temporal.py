@@ -54,3 +54,25 @@ def test_review_preserves_observed_flash_even_when_plan_missed_it():
     times = review_timestamps({'duration': 2, 'fps': 24}, plan,
                              temporal={'visual_jump_frames': [5, 6]})
     assert {4/24, 5/24, 6/24, 7/24}.issubset(times)
+
+
+def test_contact_sheet_keeps_frames_when_final_read_fails(tmp_path, monkeypatch):
+    from PIL import Image
+    from app.media import contact_sheets
+    path = tmp_path / 'flash.avi'
+    make_flash_video(path)
+    real = cv2.VideoCapture
+
+    class LastReadFails:
+        def __init__(self, *args): self.cap = real(*args); self.reads = 0
+        def set(self, *args): return self.cap.set(*args)
+        def release(self): self.cap.release()
+        def read(self):
+            self.reads += 1
+            return (False, None) if self.reads == 5 else self.cap.read()
+
+    monkeypatch.setattr(cv2, 'VideoCapture', LastReadFails)
+    sheets = contact_sheets(path, tmp_path / 'sheet', timestamps=[0, .25, .5, .75, 1])
+    assert len(sheets) == 1
+    with Image.open(sheets[0]) as sheet:
+        assert sheet.size == (3 * 384, 2 * (256 + 26))

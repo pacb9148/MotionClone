@@ -223,6 +223,11 @@ def contact_sheets(video, prefix, count=24, cancel=None, timestamps=None):
     images=[];sheets=[]
     cell_w=min(384,round(300*meta['width']/meta['height']));cell_h=round(cell_w*meta['height']/meta['width'])
     if timestamps is not None:count=len(timestamps)
+    def flush(cells):
+        sheet=Image.new('RGB',(cell_w*3,(cell_h+26)*math.ceil(len(cells)/3)),'#191b1e')
+        for n,img in enumerate(cells):sheet.paste(img,((n%3)*cell_w,(n//3)*(cell_h+26)))
+        path=prefix.with_name(prefix.name+f'-{len(sheets):02}.jpg');sheet.save(path,quality=92)
+        sheets.append(path)
     for i in range(count):
         if cancel and cancel.is_set():
             cap.release();raise Cancelled()
@@ -234,11 +239,8 @@ def contact_sheets(video, prefix, count=24, cancel=None, timestamps=None):
         cell=Image.new('RGB',(cell_w,cell_h+26),'#191b1e');cell.paste(im,((cell_w-im.width)//2,0))
         ImageDraw.Draw(cell).text((8,cell_h+5),f'{t:.3f}s | frame {round(t*meta["fps"])}',fill='white')
         images.append(cell)
-        if len(images)==12 or i==count-1:
-            sheet=Image.new('RGB',(cell_w*3,(cell_h+26)*math.ceil(len(images)/3)),'#191b1e')
-            for n,img in enumerate(images):sheet.paste(img,((n%3)*cell_w,(n//3)*(cell_h+26)))
-            path=prefix.with_name(prefix.name+f'-{len(sheets):02}.jpg');sheet.save(path,quality=92)
-            sheets.append(path);images=[]
+        if len(images)==12:flush(images);images=[]
     cap.release()
+    if images:flush(images)
     if not sheets:raise ValueError('Could not decode reference frames.')
     return sheets
