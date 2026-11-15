@@ -54,6 +54,8 @@ The demo supports side-by-side or wipe comparison, playback speed, and fullscree
 
 Build a portable static version with `python scripts/build_showcase.py`. Serve the generated `site/` folder on a static host. It contains only the landing page, original illustrative animation, and interface assets—no saved projects or reference media. Away from the local server, the page labels its animation as an illustration and links visitors to setup instructions. Test the local landing page with `scripts/showcase_acceptance.py`.
 
+Off-server there is no `/editor` route, so the build rewrites the header's Editor link to the setup section (`#get-started`) rather than shipping a dead link. Check that with `python scripts/static_showcase_acceptance.py`, which serves `site/` under a non-local hostname.
+
 ![Optional local MotionClone showcase](showcase.png)
 
 ## Refresh documentation screenshots

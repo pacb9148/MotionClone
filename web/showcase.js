@@ -13,7 +13,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.querySelectorAll('[data-icon]').forEach(element=>element.prepend(icon(element.dataset.icon)));
   setupShowcaseInteractions();
   const local=['127.0.0.1','localhost'].includes(location.hostname);
-  if(!local){const link=document.getElementById('open-workspace');link.href='#get-started';link.firstChild.textContent='Get started ';}
+  if(!local){
+    const link=document.getElementById('open-workspace');link.href='#get-started';link.firstChild.textContent='Get started ';
+    // The editor is served by the local app only; a static host has no /editor route.
+    const editor=document.getElementById('editor-link');if(editor){editor.href='#get-started';editor.textContent='Setup';}
+  }
   if(local){
     try{
       const response=await fetch('/api/library',{signal:AbortSignal.timeout(4000)});
