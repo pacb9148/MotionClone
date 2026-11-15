@@ -1,6 +1,7 @@
 import threading
 from urllib.parse import urlparse
 
+import httpx
 import pytest
 from yt_dlp import YoutubeDL
 
@@ -35,3 +36,17 @@ def test_imports_separate_or_combined_streams(tmp_path, monkeypatch, split):
                    threading.Event(), lambda *args: None)
     assert destination.is_file()
     assert b'video and audio' in destination.read_bytes()
+
+
+def test_direct_link_reports_progress_before_the_file_is_complete(tmp_path, monkeypatch):
+    destination = tmp_path / 'input.bin'
+    body = b'video' * 300_000
+    monkeypatch.setattr(media, 'validate_url', urlparse)
+    real_client = httpx.Client
+    monkeypatch.setattr(httpx, 'Client', lambda **kwargs: real_client(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, content=body)), **kwargs))
+    sizes = []
+    media.download('https://example.com/clip.mp4', destination, threading.Event(),
+                   lambda *args: sizes.append(destination.stat().st_size if destination.exists() else 0))
+    assert destination.read_bytes() == body
+    assert sizes and sizes[0] < len(body)

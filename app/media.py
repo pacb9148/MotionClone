@@ -50,6 +50,7 @@ def download(url, dest, cancel, progress):
         merged=dest.with_name(dest.name+'.mkv')
         if merged.exists():merged.replace(dest)
     else:
+        progress('Downloading video', 4)
         with httpx.Client(timeout=30, follow_redirects=False, trust_env=False) as client:
             for _ in range(6):
                 validate_url(url)
